@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
+import org.springframework.data.redis.connection.RedisStringCommands;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 
@@ -18,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Slf4j
@@ -77,18 +81,18 @@ class JwtApplicationTests {
 	//模拟签到
 	@Test
 	void setBit(){
-//		Date date = new Date();
-//		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-//		String time = format.format(date);
-//		for (int i = 0; i < 7; i++) {
-//			if (i == 3){
-//				continue;
-//			}else {
-//				userCache.addBit(time, i, true);
-//			}
-//		}
-//		Long count = userCache.bitCount(time);
-//		log.info("签到几天:{}天", count);
+		Date date = new Date();
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		String time = format.format(date);
+		for (int i = 0; i < 7; i++) {
+			if (i == 3){
+				continue;
+			}else {
+				userCache.addBit(time, Long.valueOf(i), true);
+			}
+		}
+		Long count = userCache.bitCount(time);
+		log.info("签到几天:{}天", count);
 	}
 
 	//清除签到记录
@@ -96,5 +100,24 @@ class JwtApplicationTests {
 	void clearBit(){
 		String str = (String)redisTemplate.opsForList().rightPop("user_bit_1");
 		redisTemplate.delete(str);
+	}
+
+	//检查用户连续签到
+	@Test
+	void check(){
+		Long count = (Long)redisTemplate.execute((RedisCallback<Long>) con -> con.bitOp(RedisStringCommands.BitOperation.AND,
+				"test1".getBytes(), "login:20210325".getBytes(), "login:20210326".getBytes()));
+		log.info("count:{}", count);
+		Boolean test1 = userCache.getBit("test1", 3L);
+//		System.out.println(redisTemplate.expire("test1", 5, TimeUnit.SECONDS));
+		System.out.println(redisTemplate.getExpire("test1"));
+		log.info("state:{}", test1);
+	}
+
+	@Test
+	void expire(){
+		redisTemplate.opsForValue().set("test2", "1");
+		System.out.println(redisTemplate.expire("test2", 5, TimeUnit.SECONDS));
+		System.out.println(redisTemplate.getExpire("test2"));
 	}
 }

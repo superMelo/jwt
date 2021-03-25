@@ -22,7 +22,7 @@ public class SignController {
     public SignController() {
         Date date = new Date();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        time = format.format(date);
+        time = "login_" + format.format(date);
     }
 
     @RequestMapping("sign")
@@ -35,4 +35,5 @@ public class SignController {
         boolean sign = userCache.getBit(time, userId);
         return sign ? "已签到" : "未签到";
     }
+
 }
