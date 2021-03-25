@@ -1,5 +1,6 @@
 package com.qyf.jwt;
 
+import com.alibaba.fastjson.JSON;
 import com.qyf.jwt.cache.RedisCache;
 import com.qyf.jwt.cache.TokenCache;
 import com.qyf.jwt.cache.UserCache;
@@ -9,9 +10,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @SpringBootTest
@@ -23,6 +28,10 @@ class JwtApplicationTests {
 
 	@Autowired
 	UserCache userCache;
+
+	@Autowired
+	private RedisTemplate redisTemplate;
+
 
 	@Test
 	void contextLoads() {
@@ -51,5 +60,41 @@ class JwtApplicationTests {
 		userCache.pushList("user", user);
 		List<User> users = userCache.findAll("user");
 		log.info("users:{}", users);
+	}
+
+
+	@Test
+	void zadd(){
+		userCache.zadd("users", "1", 1L);
+		userCache.zadd("users", "2", 2L);
+		userCache.zadd("users", "3", 3L);
+		userCache.zadd("users", "4", 1L);
+		userCache.zadd("users", "5", 0L);
+		Set<ZSetOperations.TypedTuple> key = userCache.getScore("users");
+		log.info("users:{}", JSON.toJSONString(key));
+	}
+
+	//模拟签到
+	@Test
+	void setBit(){
+//		Date date = new Date();
+//		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+//		String time = format.format(date);
+//		for (int i = 0; i < 7; i++) {
+//			if (i == 3){
+//				continue;
+//			}else {
+//				userCache.addBit(time, i, true);
+//			}
+//		}
+//		Long count = userCache.bitCount(time);
+//		log.info("签到几天:{}天", count);
+	}
+
+	//清除签到记录
+	@Test
+	void clearBit(){
+		String str = (String)redisTemplate.opsForList().rightPop("user_bit_1");
+		redisTemplate.delete(str);
 	}
 }
